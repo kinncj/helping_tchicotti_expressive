@@ -1,11 +1,9 @@
 <?php
 return [
     'templates' => [
-        'extension' => 'html.twig',
         'paths'     => [
-            'app'    => ['templates/app'],
-            'layout' => ['templates/layout'],
-            'error'  => ['templates/error'],
+            'app'   => 'templates/app',
+            'error' => 'templates/error'
         ],
     ],
     'twig' => [
@@ -13,5 +11,6 @@ return [
         'assets_url'     => '/',
         'assets_version' => null,
         'extensions'     => [],
+        'debug'          => true,
     ],
 ];

@@ -1,34 +1,38 @@
 <?php
-use Zend\Expressive\AppFactory;
+use Zend\Expressive\Application;
 use Zend\Expressive\Twig\TwigRenderer;
 use Zend\Diactoros\Response\HtmlResponse;
-try {
-    chdir(dirname(__DIR__));
+use Zend\Expressive\TemplatedErrorHandler;
+use Zend\Expressive\Router;
+use Zend\Expressive\Emitter;
+use Zend\Diactoros\Response\SapiEmitter;
+use Zend\ServiceManager\ServiceManager;
 
-    require 'vendor/autoload.php';
+require 'vendor/autoload.php';
 
-    $loader = new Twig_Loader_Array(include 'config/templates.php');
-    $twig = new Twig_Environment($loader);
+$config       = include 'config/templates.php';
+$loader       = new Twig_Loader_Filesystem($config['templates']['paths']);
+$twig         = new Twig_Environment($loader, $config['twig']);
+$renderer     = new TwigRenderer($twig);
+$finalHandler = new TemplatedErrorHandler($renderer, '404', '500');
 
-    $app = AppFactory::create();
+$container = new ServiceManager();
+$router    = new Router\FastRouteRouter();
+$emitter   = new Emitter\EmitterStack();
 
-    $renderer = new TwigRenderer($twig);
+$emitter->push(new SapiEmitter());
 
-    $app->get('/', function($request, $response, $next) use ($renderer) {
-        // $response->getBody()->write('Hello World');
-        // return $response;
+$app = new Application($router, $container, $finalHandler, $emitter);
 
-        return new HtmlResponse($renderer->render('app:home'));
-    });
-    $app->pipe('/',function($error, $req, $resp, $next) {
-        var_dump($error,$req,$resp,$next);
-    });
+$app->get('/', function($request, $response, $next) use ($twig) {
+    return new HtmlResponse($twig->render('home.html'));
+});
+$app->pipe('/',function($error, $req, $resp, $next) {
+    var_dump($error,$req,$resp,$next);
+});
 
-    $app->pipeRoutingMiddleware();
-    $app->pipeDispatchMiddleware();
+$app->pipeRoutingMiddleware();
+$app->pipeDispatchMiddleware();
 
 
-    $app->run();
-} catch (Exception $e) {
-    print_r($e);
-}
+$app->run();
